@@ -1,0 +1,186 @@
+#include "grid.h"
+#include <iostream>
+using namespace std; 
+
+//Helper functions: you may use them as a template.
+
+// Check if no more tokens can be placed
+bool isGridFull() {
+    for (int row = 0; row < 2; ++row) {
+        for (int col = 0; col < 2; ++col) {
+            if (grid.fields(row, col) == ' ') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+//Place a vertical or horizontal line, depending on direction
+//can be used after having verified that the move is valid
+void drawLine(int row, int col, char direction) {
+  if (direction == 'l') {
+    grid.horizontal(row, col - 1) = true;
+  } else if (direction == 'r') {
+    grid.horizontal(row, col) = true ;
+  } else if (direction == 'u') {
+    grid.vertical(row - 1, col) = true;
+  } else if (direction == 'd') {
+    grid.vertical(row, col) = true;
+  }
+}
+
+//function which checks if a line has already been drawn
+bool lineDrawn(int row, int col, char direction) {
+  if (direction == 'l' && grid.horizontal(row, col - 1)) {
+    return true;
+  } else if (direction == 'r' && grid.horizontal(row, col)) {
+    return true;
+  } else if (direction == 'u' && grid.vertical(row - 1, col)) {
+    return true;
+  } else if (direction == 'd' && grid.vertical(row, col)) {
+    return true;
+  }
+  return false;
+}
+
+
+
+//verify if a move is valid
+// try to implement switch case -> more readability (if time)
+bool isValidMove(int row, int col, char direction) {
+  if (direction == 'l') {
+    return (( col > 0 && col <= 2) && (row >= 0 && row <= 2));
+  } else if (direction == 'r') {
+    return (( col >= 0 && col < 2) && (row >= 0 && row <= 2));
+  } else if (direction == 'u') {
+    return (( col >= 0 && col <= 2) && (row > 0 && row <= 2));
+  } else if (direction == 'd') {
+    return (( col >= 0 && col <= 2) && (row >= 0 && row < 2));
+  }
+ return false;
+}
+
+//Does adding a line result in drawing an unclaimed box?
+//verify that the input is right! (not (0, 2) for example)
+bool shouldPlaceToken(int row, int col) {
+  return ((grid.horizontal(row, col) && grid.vertical(row, col))
+  && (grid.horizontal(row + 1, col) && grid.vertical(row, col + 1)));
+}
+
+//swaps the bools of A and B
+void boolSwap(bool& A, bool& B) {
+  if (A == true) {
+    A = false;
+    B = true;
+  }
+  else {
+    A = true;
+    B = false;
+  }
+}
+
+//determines if field is filled by A or B
+void AorBGrid(int row, int col, bool A) {
+  if (A) {
+    grid.fields(row, col) = 'A';
+  }
+  grid.fields(row, col) = 'B';
+}
+
+//returns true if a box has been closed
+bool checkBox(int row,int col){
+  return (grid.horizontal(row, col)
+  && grid.horizontal(row+1, col)
+  && grid.vertical(row, col)
+  && grid.vertical(row, col+1));
+}
+
+
+int count(char player) {
+  int count = 0;
+  for (int row = 0; row < 2; ++row) {
+        for (int col = 0; col < 2; ++col) {
+            if (grid.fields(row, col) == player) {
+                count += 1;
+            }
+        }
+    }
+  return count;
+}
+
+
+int main() {
+
+  // TODO: Replace the following implementation by the actual Dots And Boxes program
+  
+  //funtion test:
+  /*std::cout << isValidMove(0, 2, 'l') << std::endl;
+  drawLine(0, 2, 'l');
+  grid.printGrid();*/
+  
+  bool A = true; // A begins to play
+  bool B = false; 
+  
+  //test of boolSwap()
+  /*boolSwap(A, B);
+  std::cout << A << std::endl;
+  std::cout << B << std::endl;*/
+  
+  int row, col, direction;
+  
+  //gameloop
+  while (!isGridFull()) {
+    cout << "Input your next move in following order: row col direction" << std::endl;
+    cin >> row; cout << endl;
+    cin >> col; cout << endl;
+    cin >> direction; cout << endl;
+    
+    if (isValidMove(row, col, direction)) {
+      if (!lineDrawn(row, col, direction)) {
+        drawLine(row, col, direction);
+        for (int i = 0; i < 2; ++i) { 
+          for (int j = 0; j < 2; ++j) {
+            checkBox(i, j);
+            if (checkBox(i, j)) {
+              if (grid.fields(i, j) == ' ') {
+                AorBGrid(i, j, A); //attributes 'A' or 'B' to gridfield(i, j)
+                boolSwap(A, B); //with next boolSwap -> double boolSwap <=> no boolSwap and player plays a second time
+              }
+            }
+          }
+        }
+        boolSwap(A, B);
+      }
+      grid.printGrid(); // if invalid move doesn't show the grid
+    }
+    else {
+      std::cout << "Invalid move!" << std::endl;
+    }
+    
+  }
+  //who's won the game?
+  int countA, countB;
+  countA = count('A');
+  countB = count('B');
+  if (countA == countB) {
+    std::cout << "Draw!" << std::endl;
+  } else if (countA > countB) {
+    std::cout << "'A' won!" << std::endl;
+  } else if (countB > countA) {
+    std::cout << "'B' won!" << std::endl;
+  }
+  
+  
+  // Feature-Demo: Draw a box with an 'X' in the upper left corner of the board.
+  /*grid.vertical(0, 0) = true;
+  grid.vertical(0, 1) = true;
+  grid.horizontal(0, 0) = true;
+  grid.horizontal(1, 0) = true;
+  grid.fields(0, 0) = 'X';
+  
+  // Feature-Demo: Print the grid.
+  grid.printGrid();  */
+
+  return 0;
+}

@@ -1,0 +1,151 @@
+#include "grid.h"
+#include <iostream>
+
+// This implementation works for an arbitrary grid size.
+
+// Check if no more tokens can be placed
+bool isGridFull() {
+    for (int row = 0; row < grid.numRows(); ++row) {
+        for (int col = 0; col < grid.numCols(); ++col) {
+            if (grid.fields(row, col) == ' ') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Return the symbol of a player who has won.
+// Return ' ' if draw.
+char checkResult(char player1, char player2) {
+    int score1 = 0;
+    int score2 = 0;
+    for (int row = 0; row < grid.numRows(); ++row) {
+        for (int col = 0; col < grid.numCols(); ++col) {
+            if (grid.fields(row, col) == player1) ++score1;
+            else if (grid.fields(row, col) == player2) ++score2;
+        }
+    }
+    if (score1 > score2) return player1;
+    else if (score2 > score1) return player2;
+    else return ' ';
+}
+
+//Check if the move is within the bounds of the board,
+//And the line is not already drawn
+bool isValidMove(int row, int col, char direction) {
+    switch (direction) {
+        case 'u':
+            return row > 0 && row <= grid.numRows() && col >= 0 &&
+                   col <= grid.numCols() && !grid.vertical(row - 1, col);
+        case 'd':
+            return row >= 0 && row < grid.numRows() && col >= 0 &&
+                   col <= grid.numCols() && !grid.vertical(row, col);
+        case 'l':
+            return row >= 0 && row <= grid.numRows() && col > 0 &&
+                   col <= grid.numCols() && !grid.horizontal(row, col - 1);
+        case 'r':
+            return row >= 0 && row <= grid.numRows() && col >= 0 &&
+                   col < grid.numCols() && !grid.horizontal(row, col);
+        default:
+            return false;
+    }
+}
+
+//Place a vertical or horizontal line, depending on direction
+void drawLine(int row, int col, char direction) {
+  switch (direction) {
+      case 'u':
+        grid.vertical(row - 1, col) = true;
+        break;
+      case 'd':
+        grid.vertical(row, col) = true;
+        break;
+      case 'l':
+        grid.horizontal(row, col - 1) = true;
+        break;
+      case 'r':
+        grid.horizontal(row, col) = true;
+        break;
+      default:
+        break;
+  }
+}
+
+//Does adding a line result in drawing an unclaimed box?
+bool shouldPlaceToken(int row, int col) {
+  return row >= 0 && row < grid.numRows() && col >= 0 && col < grid.numCols()
+      && grid.vertical(row, col) && grid.vertical(row, col + 1)
+      && grid.horizontal(row, col) && grid.horizontal(row + 1, col)
+      && grid.fields(row, col) == ' ';
+}
+
+//Play player's turn
+bool playTurn(char player) {
+    std::cout << player << "'s turn:\n";
+    int row, col;
+    char direction;
+    bool drawn = false;
+    while (true) {
+        std::cin >> row >> col >> direction;
+        if (isValidMove(row, col, direction)) {
+            drawLine(row, col, direction);
+            if (shouldPlaceToken(row - 1, col - 1)) {
+                grid.fields(row - 1, col - 1) = player;
+                drawn = true;
+            }
+            if (shouldPlaceToken(row, col - 1)) {
+                grid.fields(row, col - 1) = player;
+                drawn = true;
+            }
+            if (shouldPlaceToken(row - 1, col)) {
+                grid.fields(row - 1, col) = player;
+                drawn = true;
+            }
+            if (shouldPlaceToken(row, col)) {
+                grid.fields(row, col) = player;
+                drawn = true;
+            }
+            return drawn;
+        }
+        std::cout << "Invalid move!\n";
+    }
+}
+
+int main() {
+
+    // Initialize the game.
+    char currentPlayer = 'B';
+    bool drawnBox = false;
+    
+    // Each iteration of this loop runs one turn.
+    while (true) {
+        grid.printGrid();
+        
+        if (isGridFull()) break;
+        
+        // Switch the player, unless the current player
+        // has drawn a box in the previous turn.
+        if (!drawnBox) {
+            if (currentPlayer == 'A') {
+                currentPlayer = 'B';
+            } else {
+                currentPlayer = 'A';
+            }
+        }
+        
+        drawnBox = playTurn(currentPlayer);
+        std::cout << "\n";
+    }
+    
+    // Check and announce the winner.
+    char winner = checkResult('A', 'B');
+    if (winner == ' ') {
+        std::cout << "Draw!";
+    } else {
+        std::cout << winner << " won!";
+    }
+    
+    return 0;
+
+}
